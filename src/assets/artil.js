@@ -320,7 +320,7 @@ app.updateEvent.on(function (frame) {
 					playerStructure.lng= gpsCartographicDeg[0];
 					playerStructure.altitude= gpsCartographicDeg[2];
 					playerStructure.heading= gunHeading;
-					var ref = firebase.database().ref().child('players').push(playerStructure, function(err) {
+					var ref = firebase.database().ref().child('players').set(playerStructure, function(err) {
 					if (err) {  // Data was not written to firebase.
 					  console.warn(err);
 					}
