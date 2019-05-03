@@ -1,7 +1,38 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>
-      Arty
+      <script src="../assets/artil.js"></script>
+
+
+
+
+        <ion-button   size = "small" id="left" shape = "round" color="tertiary">Left</ion-button>
+          <ion-button  size = "small" shape = "round" color="tertiary">Right</ion-button>
+          <ion-button expand="block" size = "small" shape = "round" color="danger">Fire</ion-button>
+          <ion-button   size = "small" shape = "round" color = "secondary" >+1 Pow </ion-button>
+          <ion-button  size = "small" shape = "round" color="secondary">-1 Pow </ion-button>
+
+
+
+
+<div class="health-bar" data-total="1000" data-value="1000">
+  <div class="bar">
+    <div class="hit"></div>
+  </div>
+</div>
+
+<br />
+
+<button class="damage random">hit random</button>
+<button class="reset">reset</button>
+
+<div class="log">
+  <div>What's going on...</div>
+</div>
+
+
+
+
     </ion-title>
   </ion-toolbar>
 </ion-header>

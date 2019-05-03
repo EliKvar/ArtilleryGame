@@ -16,7 +16,7 @@ var playerStructure = {
 		altitude: null,
 		heading: null
       };
-	  
+
 var bulletStructure = {
         sender: null,
         timestamp: null,
@@ -48,10 +48,10 @@ firebase.initializeApp(firebaseConfig);
         firebase.auth().signInAnonymously().catch(function(error) {
           if (error) {
             console.log('Login Failed!', error);
-          } 
+          }
         });  // Users will get a new id for every session.
       }
-	  
+
 	firebase.auth().onAuthStateChanged(function(user) {
 	if (user) {
 		// User is signed in.
@@ -59,10 +59,10 @@ firebase.initializeApp(firebaseConfig);
 		senderUID = user.uid;
 		initFirebase();
 	}});
-	  
+
 	function initFirebase() {
 	var players = firebase.database().ref().child('players');
-	
+
 		var startTime = new Date().getTime() - (60 * 10 * 1000);
 	  players.orderByChild('timestamp').startAt(startTime).on('child_added',
           function(snapshot) {
@@ -81,8 +81,8 @@ firebase.initializeApp(firebaseConfig);
           }
         );
 	  }
-	  
-initAuthentication(initFirebase.bind(undefined));	  
+
+initAuthentication(initFirebase.bind(undefined));
 // set up Argon
 var app = Argon.init();
 //app.view.element.style.zIndex = 0;
@@ -91,16 +91,15 @@ app.subscribeGeolocation({ enableHighAccuracy: true });
 // set up THREE.  Create a scene, a perspective camera and an object
 // for the user's location
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera();
 var user = new THREE.Object3D;
-scene.add(camera);
+//scene.add(camera);
 scene.add(user);
 // The CSS3DArgonRenderer supports mono and stereo views.  Currently
 // not using it in this example, but left it in the code in case we
-// want to add an HTML element near either geo object. 
-// The CSS3DArgonHUD is a place to put things that appear 
-// fixed to the screen (heads-up-display).  
-// In this demo, we are  rendering the 3D graphics with WebGL, 
+// want to add an HTML element near either geo object.
+// The CSS3DArgonHUD is a place to put things that appear
+// fixed to the screen (heads-up-display).
+// In this demo, we are  rendering the 3D graphics with WebGL,
 // using the standard WebGLRenderer, and using the CSS3DArgonHUD
 // to manage the 2D display fixed content
 var cssRenderer = new THREE.CSS3DArgonRenderer();
@@ -120,17 +119,111 @@ app.view.setLayers([
 ]);
 
 var buzz = new THREE.Object3D;
-var loader = new THREE.TextureLoader();
-loader.load('assets/box.png', function (texture) {
+var container;
+var camera;
+var object;
+//User Input
+var mortarYaw;
+var mortarPitch;
+var mortarPower = 0;
+
+//Start of model code
+init();
+function init() {
+  container = document.createElement( 'div' );
+  document.body.appendChild( container );
+  camera = new THREE.PerspectiveCamera();
+  // scene
+  var ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 );
+  scene.add( ambientLight );
+  var pointLight = new THREE.PointLight( 0xffffff, 0.8 );
+  camera.add( pointLight );
+  scene.add( camera );
+  // manager
+  function loadModel() {
+    //Seems to me that the model is being spawnerd via argon's geolocation on top of the user.
+    //Change the scale and position numbers when we are able to see the object in the real world. Hard to tell if its sitting correctly with white background
+    object.scale.x = 1;
+    object.scale.y = 1;
+    object.scale.z = 1;
+
+  //  object.position.x += 1; //Move left and right
+    object.position.z -= 1.9; //Move forward and back
+    object.position.y -= .4; //Move up and down
+
+    object.rotation.z -= 0; // Vertical rotation The numbers are weird for z rotation. Try .1 to .5 and -.1 to -.5
+    object.rotation.y += 90; // Lateral rotation
+
+    mortarYaw = object.rotation.y;
+    mortarPitch = object.rotation.z;
+
+    scene.add( object );
+  }
+
+  var manager = new THREE.LoadingManager( loadModel );
+  manager.onProgress = function ( item, loaded, total ) {
+    console.log( item, loaded, total );
+  };
+  // texture
+
+  // model
+  function onProgress( xhr ) {
+    if ( xhr.lengthComputable ) {
+      var percentComplete = xhr.loaded / xhr.total * 100;
+      console.log( 'model ' + Math.round( percentComplete, 2 ) + '% downloaded' );
+    }
+  }
+//  function onError() {}
+  var loader = new THREE.OBJLoader( manager );
+  loader.load( 'assets/Old_mortar.obj', function ( obj ) {
+    object = obj;  });}//, onProgress, onError );
+//}
+//End of model code
+
+//var loader = new THREE.TextureLoader();
+//var mortar = new THREE.Scene();
+//var mortar = new THREE.Scene();
+
+
+//var loadingManager = new THREE.LoadingManager( function () {
+
+//mortar.position.x = 0;
+//mortar.position.y = 20;
+//mortar.position.y = 0;
+//mortar.scale.x = 0.04;
+//mortar.scale.y = 0.04;
+//mortar.scale.z = 0.04;
+//mortar.translateZ( 10 );
+
+//scene.add( mortar );
+
+//} );
+
+
+//var loader = new THREE.ColladaLoader( loadingManager );
+  //        loader.load('assets/Old_mortarScaled.dae', function (collada) {
+//					mortar = collada.scene;
+       //  mortar.scale.set(1, 1, 1);
+//				} );
+
+        //mortar.scale.set(1, 1, 1);
+      //mortar.scale.x = 100;
+
+
+
+
+/*
+loader.load('./objects/Old_mortar.dae', function (collada) {
     var geometry = new THREE.BoxGeometry(10, 10, 10);
     var material = new THREE.MeshBasicMaterial({ map: texture });
     var mesh = new THREE.Mesh(geometry, material);
     mesh.scale.set(100, 100, 100);
     buzz.add(mesh);
-});
-// have our geolocated object start somewhere, in this case 
+});*/
+
+// have our geolocated object start somewhere, in this case
 // near Georgia Tech in Atlanta.
-// you should probably adjust this to a spot closer to you 
+// you should probably adjust this to a spot closer to you
 // (we found the lon/lat of Georgia Tech using Google Maps)
 var gatechGeoEntity = new Cesium.Entity({
     name: "Georgia Tech",
@@ -158,7 +251,7 @@ loader.load('assets/box.png', function (texture) {
     var mesh2 = new THREE.Mesh(geometry2, material);
     floorBox.add(mesh2);
 });
-// Create a box that we indend to have geoposed. 
+// Create a box that we indend to have geoposed.
 var geoBoxEntity = new Argon.Cesium.Entity({
     name: "I have a box",
     position: new Argon.Cesium.ConstantPositionProperty(undefined),
@@ -213,7 +306,7 @@ app.updateEvent.on(function (frame) {
     user.quaternion.copy(userPose.orientation);
     // get the user pose relative to FIXED
     var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
-    // If user has a FIXED pose and our geoBoxEntity is not positioned relative to FIXED, 
+    // If user has a FIXED pose and our geoBoxEntity is not positioned relative to FIXED,
     // try to convert its reference frame to FIXED
     if (userPoseFIXED.status & Argon.PoseStatus.KNOWN &&
         geoBoxEntity.position.referenceFrame !== ReferenceFrame.FIXED) {
@@ -221,7 +314,7 @@ app.updateEvent.on(function (frame) {
         // the box doesn't move if the local coordinate system origin changes.
         Argon.convertEntityReferenceFrame(geoBoxEntity, frame.time, ReferenceFrame.FIXED);
     }
-    // if the geoBoxEntity still does not have a known pose, 
+    // if the geoBoxEntity still does not have a known pose,
     // place it 2 meters in front of the user, on the stage
     var geoBoxPose = app.getEntityPose(geoBoxEntity);
     if ((geoBoxPose.status & Argon.PoseStatus.KNOWN) === 0) {
@@ -266,7 +359,7 @@ app.updateEvent.on(function (frame) {
         scene.remove(floorBox);
         scene.remove(boxToboxLine);
     }
-    // rotate the boxes at a constant speed, independent of frame rates     
+    // rotate the boxes at a constant speed, independent of frame rates
     // to make it a little less boring
     buzz.rotateY(2 * frame.deltaTime / 10000);
     box.rotateY(3 * frame.deltaTime / 10000);
@@ -277,9 +370,9 @@ app.updateEvent.on(function (frame) {
     //
     // we'll compute the distance to the cube, just for fun. If the cube could be further away,
     // we'd want to use Cesium.EllipsoidGeodesic, rather than Euclidean distance, but this is fine here.
-	
-	
-	
+
+
+
 	var userPos = new THREE.Vector3;
 	var buzzPos = new THREE.Vector3;
 	var boxPos = new THREE.Vector3;
@@ -291,7 +384,7 @@ app.updateEvent.on(function (frame) {
     var distanceToBox = userPos.distanceTo(boxPos);
     var distanceToBuzz = userPos.distanceTo(buzzPos);
     var distanceToBox2 = userPos.distanceTo(boxPos2);
-	
+
 
     // cartographicDegrees is a 3 element array containing [longitude, latitude, height]
     var gpsCartographicDeg = [0, 0, 0];
@@ -307,7 +400,7 @@ app.updateEvent.on(function (frame) {
                 CesiumMath.toDegrees(userLLA.latitude),
                 userLLA.height
             ];
-			
+
 			frameIncrementer+=1;
 			if(frameIncrementer>100)
 			{
@@ -358,16 +451,16 @@ app.renderEvent.on(function () {
     var viewport = view.viewport;
     cssRenderer.setSize(viewport.width, viewport.height);
     hud.setSize(viewport.width, viewport.height);
- 
+
     for (var _i = 0, _a = app.view.subviews; _i < _a.length; _i++) {
         var subview = _a[_i];
         var frustum = subview.frustum;
-        // set the position and orientation of the camera for 
+        // set the position and orientation of the camera for
         // this subview
         camera.position.copy(subview.pose.position);
         camera.quaternion.copy(subview.pose.orientation);
         // the underlying system provide a full projection matrix
-        // for the camera. 
+        // for the camera.
         camera.projectionMatrix.fromArray(subview.frustum.projectionMatrix);
         // set the webGL rendering parameters and render this view
         // set the viewport for this view
@@ -386,4 +479,9 @@ app.renderEvent.on(function () {
         hud.setViewport(x, y, width, height, subview.index);
         hud.render(subview.index);
     }
+
 });
+
+function leftBtnClickEvent(){
+  alert("timestamp");
+}
