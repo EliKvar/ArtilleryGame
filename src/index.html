@@ -23,6 +23,33 @@
   <script src="assets/OBJLoader.js"></script>
 
 
+
+  <ion-header>
+    <ion-toolbar>
+      <ion-button onclick="javascript:StartRotation();" style = "width:44%"  size = "small" id="left" shape = "round" color="tertiary">Start Rotation</ion-button>
+      <ion-button onclick="javascript:StopRotation();"  style = "width:44%"  size = "small" shape = "round" color="tertiary">Stop Rotation</ion-button>
+      <ion-button onclick="javascript:Fire();"  expand="block" size = "small" shape = "round" color="danger">Fire</ion-button>
+      <ion-button onclick="javascript:AddPow();"  style = "width:44%"  size = "small" shape = "round" color = "secondary" >+1 Pow </ion-button>
+      <ion-button onclick="javascript:RemovePow();" style = "width:44%" size = "small" shape = "round" color="secondary">-1 Pow </ion-button>
+      <ion-button onclick="javascript:AddElevation();"  style = "width:44%"  size = "small" shape = "round" color = "secondary" >+1 Elevation </ion-button>
+      <ion-button onclick="javascript:RemoveElevation();" style = "width:44%" size = "small" shape = "round" color="secondary">-1 Elevation </ion-button>
+
+      <ion-title>
+
+
+
+
+
+
+
+
+
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+
+  </ion-content>
 </head>
 
 <body>
@@ -37,10 +64,11 @@
       </div>
 	</div>
 
+
+
+
   <script src="https://www.gstatic.com/firebasejs/5.10.1/firebase.js"></script>
   <script src="assets/artil.js"></script>
-
-
 </body>
 
 </html>

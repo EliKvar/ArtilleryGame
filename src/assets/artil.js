@@ -1,12 +1,14 @@
 /// <reference types="@argonjs/argon" />
 /// <reference types="three" />
 // grab some handles on APIs we use
+
 var Cesium = Argon.Cesium;
 var Cartesian3 = Argon.Cesium.Cartesian3;
 var ReferenceFrame = Argon.Cesium.ReferenceFrame;
 var JulianDate = Argon.Cesium.JulianDate;
 var CesiumMath = Argon.Cesium.CesiumMath;
 
+var start = false;
 var gunHeading = 0;
 var playerStructure = {
         sender: null,
@@ -128,8 +130,17 @@ var mortarPitch;
 var mortarPower = 0;
 
 //Start of model code
+
 init();
 function init() {
+
+// document.getElementById("ROTATE_LEFT").addEventListener("click", RotateLeft);
+//  document.getElementById("ROTATE_RIGHT").addEventListener("click", RotateRight);
+  //document.getElementById("FIRE").addEventListener("click", Fire);
+  //document.getElementById("ADD_POW").addEventListener("click", AddPow);
+  //document.getElementById("REMOVE_POW").addEventListener("click", RemovePow);
+
+
   container = document.createElement( 'div' );
   document.body.appendChild( container );
   camera = new THREE.PerspectiveCamera();
@@ -152,14 +163,36 @@ function init() {
     object.position.y -= .4; //Move up and down
 
     object.rotation.z -= 0; // Vertical rotation The numbers are weird for z rotation. Try .1 to .5 and -.1 to -.5
-    object.rotation.y += 90; // Lateral rotation
+  //  object.rotation.y += 90; // Lateral rotation
 
     mortarYaw = object.rotation.y;
     mortarPitch = object.rotation.z;
 
     scene.add( object );
   }
+  //BUTTON FUNCTIONALITY
 
+
+/*
+  function videoCapture() {
+     var options = {
+        limit: 1,
+        duration: 10
+     };
+     navigator.device.capture.captureVideo(onSuccess, onError, options);
+
+     function onSuccess(mediaFiles) {
+        var i, path, len;
+        for (i = 0, len = mediaFiles.length; i < len; i += 1) {
+           path = mediaFiles[i].fullPath;
+           console.log(mediaFiles);
+        }
+     }
+
+     function onError(error) {
+        navigator.notification.alert('Error code: ' + error.code, null, 'Capture Error');
+     }
+  } */
   var manager = new THREE.LoadingManager( loadModel );
   manager.onProgress = function ( item, loaded, total ) {
     console.log( item, loaded, total );
@@ -300,7 +333,11 @@ function getTimestamp(addClick) {
 // rendered, before the renderEvent.  The state of your application
 // should be updated here.
 app.updateEvent.on(function (frame) {
-    // get the user pose in the local coordinate frame.
+    // get the user pose in the local coordinate frame()
+    if(start == true){
+      object.rotation.y += .01;
+    }
+
     var userPose = app.getEntityPose(app.user);
     user.position.copy(userPose.position);
     user.quaternion.copy(userPose.orientation);
@@ -482,6 +519,43 @@ app.renderEvent.on(function () {
 
 });
 
-function leftBtnClickEvent(){
-  alert("timestamp");
+
+function StartRotation(){
+
+  console.log("Rotate Left");
+start = true;
+}
+
+function StopRotation(){
+start = false;
+  console.log("Rotate Right");
+}
+
+function Fire(){
+
+
+  console.log("Fire");
+}
+
+function AddPow(){
+
+
+
+  console.log("Add Power");
+}
+
+function RemovePow(){
+
+
+  console.log("Remove Power");
+}
+
+function AddElevation(){
+
+  console.log("Add Elevation");
+}
+
+function RemoveElevation(){
+
+  console.log("Remove Elevation");
 }
