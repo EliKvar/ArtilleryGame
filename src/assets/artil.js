@@ -268,21 +268,6 @@ app.updateEvent.on(function (frame) {
     // get the user pose in the local coordinate frame()
     if(!object) return;
 
-    if(isTurningLeft == true){
-      object.rotation.y += .01;
-      var test = Math.floor( object.rotation.y * (180/Math.PI) % 360);
-
-      console.log(elevationData.value);
-
-      console.log("Rotating left: "+ test);
-    }
-    if(isTurningRight == true){
-      object.rotation.y -= .01;
-      var test = Math.floor( object.rotation.y * (180/Math.PI) % 360);
-
-      console.log("Rotating right: "+ test);
-    }
-
     gunHeading= rotationData.value * (Math.PI/180);
 
     object.rotation.y = gunHeading;
@@ -469,36 +454,12 @@ app.renderEvent.on(function () {
 });
 
 
-function RotateLeft(){
-
-  if(isTurningLeft == true){
-    isTurningLeft = false;
-    isTurningRight = false;
-
-  } else if(isTurningLeft == false){
-      isTurningLeft = true;
-      isTurningRight = false;
-
-    }
-
-}
-
-function RotateRight(){
-
-if(isTurningRight == true){
-  isTurningRight = false;
-  isTurningLeft = false;
-
-} else if(isTurningRight == false) {
-  isTurningRight = true;
-  isTurningLeft = false;
-}
-}
-
 function Fire(){
 var userPower = document.getElementById("powerData").value;
 
 var userDirection = Math.floor( object.rotation.y * (180/Math.PI) % 360);
 
-  console.log("userPower= "+ userPower+ " objectDirection "+ userDirection);
+var userElevation = document.getElementById("elevationData").value;;
+
+  console.log("userPower= "+ userPower+ " objectDirection "+ userDirection+ " objectElevation "+userElevation);
 }
