@@ -11,13 +11,22 @@ var CesiumMath = Argon.Cesium.CesiumMath;
 var isTurningLeft = false;
 var isTurningRight = false;
 
+var angleLine;
+var angleLine2;
+var angleLine3;
+
+var line;
+
 var start = false;
 var gunHeading = 0;
 var gunElevation = 0;
-var gunPower = 0;  
+var gunPower = 0;
 var senderUID = null;
 var globalUID = 1;
 var playerInstances = null;
+
+
+
 
 var playerStructure = {
         sender: null,
@@ -38,14 +47,14 @@ var bulletStructure = {
 		angle: null,
 		velocity: null
       };
-	  
+
 var playerInstanceStructure = {
         lat: null,
         lng: null,
 		altitude: null,
 		heading: null,
 		threejsObject: null
-      };	  
+      };
 
 function drawLine(v1,v2)
 {
@@ -59,6 +68,7 @@ function drawLine(v1,v2)
 	var lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
 	var line = new THREE.Line(lineGeometry, lineMaterial);
 	scene.add(line);
+  return line;
 	//console.log("Line generated "+v3.x+" "+v3.y+" "+v3.z+" "+v4.x+" "+v4.y+" "+v4.z);
 }
 
@@ -112,7 +122,7 @@ firebase.initializeApp(firebaseConfig);
             }, expirySeconds);
           }
         );
-		firebase.database().ref().child('players').on("value", function(snapshot) {					
+		firebase.database().ref().child('players').on("value", function(snapshot) {
 					var playerstruct = snapshot.val();
 					var playerIStruct = Object.assign({}, playerInstanceStructure);
 					playerIStruct.lat = parseFloat(playerstruct.lat);
@@ -146,7 +156,7 @@ firebase.initializeApp(firebaseConfig);
 						 p.position.z = Pose.position.z;
 					}
 					//p.position = playerLocationEntity.position;
-					
+
 					playerIStruct.threejsObject = p;
 					if(playerInstances==null)
 						playerInstances = new Array();
@@ -212,6 +222,8 @@ var mortarPower = 0;
 init();
 function init() {
 
+
+
   container = document.createElement( 'div' );
   document.body.appendChild( container );
   camera = new THREE.PerspectiveCamera();
@@ -231,13 +243,18 @@ function init() {
 
   //  object.position.x += 1; //Move left and right
     object.position.z -= 2.4; //Move forward and back
-    object.position.y -= .4; //Move up and down
+    object.position.y -= .8; //Move up and down
 
     object.rotation.z -= 0; // Vertical rotation The numbers are weird for z rotation. Try .1 to .5 and -.1 to -.5
   //  object.rotation.y += 90; // Lateral rotation
 
     mortarYaw = object.rotation.y;
     mortarPitch = object.rotation.z;
+
+   line = drawLine(new THREE.Vector3(object.position.x - .3,object.position.y + 1 ,object.position.z - 1),new THREE.Vector3(object.position.x + .3,object.position.y+1,object.position.z -1));
+   arrowLine1 = drawLine(new THREE.Vector3(object.position.x + .1, object.position.y + 1.2 ,object.position.z - 1),new THREE.Vector3(object.position.x + .3,object.position.y+1,object.position.z -1));
+   arrowLine2 = drawLine(new THREE.Vector3(object.position.x + .1, object.position.y + .8 ,object.position.z - 1),new THREE.Vector3(object.position.x + .3,object.position.y+1,object.position.z -1));
+
 
 
     scene.add( object );
@@ -266,7 +283,6 @@ function toFixed(value, precision) {
     var power = Math.pow(10, precision || 0);
     return String(Math.round(value * power) / power);
 }
-
 var frameIncrementer = 0;
 
 function getTimestamp(addClick) {
@@ -295,10 +311,17 @@ function getTimestamp(addClick) {
 app.updateEvent.on(function (frame) {
     // get the user pose in the local coordinate frame()
     if(!object) return;
+    if(!line) return;
 
     gunHeading= rotationData.value * (Math.PI/180);
-
     object.rotation.y = gunHeading;
+
+
+    gunElevation = elevationData.value * (Math.PI/180);
+    line.rotation.z = gunElevation;
+    arrowLine1.rotation.z = gunElevation;
+    arrowLine2.rotation.z = gunElevation;
+
 
     var userPose = app.getEntityPose(app.user);
     user.position.copy(userPose.position);
@@ -307,7 +330,7 @@ app.updateEvent.on(function (frame) {
     var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
     // If user has a FIXED pose and our geoBoxEntity is not positioned relative to FIXED,
     // try to convert its reference frame to FIXED
-   
+
 
 
 	var userPos = new THREE.Vector3;
@@ -320,15 +343,15 @@ app.updateEvent.on(function (frame) {
     // Why does user not move? check local movement & movement relative to fixed
     // get user position in global coordinates
     var userLLA = Cesium.Ellipsoid.WGS84.cartesianToCartographic(userPose.position);
-	
+
 	if (userLLA) {
 		gpsCartographicDeg = [
 			CesiumMath.toDegrees(userLLA.longitude),
 			CesiumMath.toDegrees(userLLA.latitude),
-			userLLA.height				
+			userLLA.height
 		];
 	}
-	
+
 	//console.log(""+userLLA.longitude+" "+userLLA.latitude);
 	frameIncrementer+=1;
 	if(frameIncrementer>200)
@@ -352,7 +375,7 @@ app.updateEvent.on(function (frame) {
 			}
 		  });
 		});
-		
+
 		if(playerInstances!=null)
 		{
 			playerInstances.forEach(function(element) {
@@ -363,11 +386,11 @@ app.updateEvent.on(function (frame) {
 			});
 			playerInstances=null;
 		}
-		
+
 		playerInstances = new Array();
-		
-		
-		
+
+
+
 	}
 });
 // renderEvent is fired whenever argon wants the app to update its display
@@ -414,11 +437,11 @@ app.renderEvent.on(function () {
 
 
 function Fire(){
-var userPower = document.getElementById("powerData").value;
+gunPower = document.getElementById("powerData").value;
 
-var userDirection = Math.floor( object.rotation.y * (180/Math.PI) % 360);
+gunHeading = Math.floor( object.rotation.y * (180/Math.PI) % 360);
 
-var userElevation = document.getElementById("elevationData").value;;
+gunElevation = document.getElementById("elevationData").value;
 
-  console.log("userPower= "+ userPower+ " objectDirection "+ userDirection+ " objectElevation "+userElevation);
+  console.log("Gun Power: "+ gunPower+ " Gun Heading(rotation): "+ gunHeading+ " Gun Elevation: "+gunElevation);
 }
