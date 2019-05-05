@@ -11,10 +11,14 @@ var CesiumMath = Argon.Cesium.CesiumMath;
 var isTurningLeft = false;
 var isTurningRight = false;
 
-
-
 var start = false;
 var gunHeading = 0;
+var gunElevation = 0;
+var gunPower = 0;  
+var senderUID = null;
+var globalUID = 1;
+var playerInstances = null;
+
 var playerStructure = {
         sender: null,
         timestamp: null,
@@ -34,8 +38,29 @@ var bulletStructure = {
 		angle: null,
 		velocity: null
       };
-var senderUID = null;
+	  
+var playerInstanceStructure = {
+        lat: null,
+        lng: null,
+		altitude: null,
+		heading: null,
+		threejsObject: null
+      };	  
 
+function drawLine(v1,v2)
+{
+	if(!(v1!=null&&v2!=null))
+		return;
+	var v3 = new THREE.Vector3(v1.x,v1.y,v1.z);
+	var v4 = new THREE.Vector3(v2.x,v2.y,v2.z);
+	var lineGeometry = new THREE.Geometry();
+	lineGeometry.vertices.push(v3);
+	lineGeometry.vertices.push(v4);
+	var lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
+	var line = new THREE.Line(lineGeometry, lineMaterial);
+	scene.add(line);
+	//console.log("Line generated "+v3.x+" "+v3.y+" "+v3.z+" "+v4.x+" "+v4.y+" "+v4.z);
+}
 
 var firebaseConfig = {
   apiKey: "AIzaSyB0RWPQK3jmLxMRy7DiBBT29hoRjVNfnpw",
@@ -87,6 +112,52 @@ firebase.initializeApp(firebaseConfig);
             }, expirySeconds);
           }
         );
+		firebase.database().ref().child('players').on("value", function(snapshot) {					
+					var playerstruct = snapshot.val();
+					var playerIStruct = Object.assign({}, playerInstanceStructure);
+					playerIStruct.lat = parseFloat(playerstruct.lat);
+					playerIStruct.lng = parseFloat(playerstruct.lng);
+					playerIStruct.altitude = parseFloat(playerstruct.altitude);
+					playerIStruct.heading = parseFloat(playerstruct.heading);
+					//console.log(playerIStruct.lat);
+					//console.log(playerIStruct.lng);
+					//console.log(playerstruct);
+					var playerLocationEntity = new Argon.Cesium.Entity({
+						name: ""+globalUID++,
+						position: Cartesian3.fromDegrees(playerIStruct.lat, playerIStruct.lng,0),
+						orientation: Cesium.Quaternion.IDENTITY
+					});
+					if (!Argon.convertEntityReferenceFrame(playerLocationEntity, 1, app.stage)) {
+						console.warn('Unable to convert to stage frame! At ~128');
+					}
+
+					var p = new THREE.Object3D;
+					//p = object;
+					p.name = ""+globalUID++;
+					var Pose = app.getEntityPose(playerLocationEntity);
+					if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
+						//p.position=Pose.position;
+						//Pose.position.copy(user.position);
+						 user.position.copy(Pose.position);
+						 //p.position.copy(Pose.position);
+						 //Pose.position.copy(p.position);
+						 p.position.x = Pose.position.x;
+						 p.position.y = Pose.position.y;
+						 p.position.z = Pose.position.z;
+					}
+					//p.position = playerLocationEntity.position;
+					
+					playerIStruct.threejsObject = p;
+					if(playerInstances==null)
+						playerInstances = new Array();
+					p.position.z+=playerInstances.length;
+					scene.add(p);
+					playerInstances.push(playerIStruct);
+					console.log("Number of active player models:"+playerInstances.length);
+					drawLine(new THREE.Vector3(0,0,0),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+				}, function (errorObject) {
+					console.log("The read failed: " + errorObject.code);
+			});
 	  }
 
 initAuthentication(initFirebase.bind(undefined));
@@ -190,49 +261,6 @@ function init() {
   loader.load( 'assets/Old_mortar.obj', function ( obj ) {
     object = obj;  });}//, onProgress, onError );
 
-var gatechGeoEntity = new Cesium.Entity({
-    name: "Georgia Tech",
-    position: Cartesian3.fromDegrees(-84.398881, 33.778463),
-    orientation: Cesium.Quaternion.IDENTITY
-});
-var gatechGeoTarget = new THREE.Object3D;
-gatechGeoTarget.add(buzz);
-scene.add(gatechGeoTarget);
-// create a 1m cube with a wooden box texture on it, that we will attach to the geospatial object when we create it
-// Box texture from https://www.flickr.com/photos/photoshoproadmap/8640003215/sizes/l/in/photostream/
-//, licensed under https://creativecommons.org/licenses/by/2.0/legalcode
-var boxGeoObject = new THREE.Object3D;
-var box = new THREE.Object3D();
-// In a 6DOF reality(such as Tango-reality), create a box to put on the floor at the center of the stage
-var floorBox = new THREE.Object3D();
-var loader = new THREE.TextureLoader();
-loader.load('assets/box.png', function (texture) {
-    // Set box size to 20 cm
-    var geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-    var material = new THREE.MeshBasicMaterial({ map: texture });
-    var mesh = new THREE.Mesh(geometry, material);
-    box.add(mesh);
-    var geometry2 = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-    var mesh2 = new THREE.Mesh(geometry2, material);
-    floorBox.add(mesh2);
-});
-// Create a box that we indend to have geoposed.
-var geoBoxEntity = new Argon.Cesium.Entity({
-    name: "I have a box",
-    position: new Argon.Cesium.ConstantPositionProperty(undefined),
-    orientation: new Argon.Cesium.ConstantProperty(undefined)
-});
-boxGeoObject.add(box);
-// Set initial box position 2 meters in front of user
-boxGeoObject.position.z = -2;
-scene.add(boxGeoObject);
-// A line between the two boxes
-var lineGeometry = new THREE.Geometry();
-lineGeometry.vertices.push(new THREE.Vector3());
-lineGeometry.vertices.push(new THREE.Vector3());
-var lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
-var boxToboxLine = new THREE.Line(lineGeometry, lineMaterial);
-
 // make floating point output a little less ugly
 function toFixed(value, precision) {
     var power = Math.pow(10, precision || 0);
@@ -279,83 +307,11 @@ app.updateEvent.on(function (frame) {
     var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
     // If user has a FIXED pose and our geoBoxEntity is not positioned relative to FIXED,
     // try to convert its reference frame to FIXED
-    if (userPoseFIXED.status & Argon.PoseStatus.KNOWN &&
-        geoBoxEntity.position.referenceFrame !== ReferenceFrame.FIXED) {
-        // now, we want to move the box's coordinates to the FIXED frame, so
-        // the box doesn't move if the local coordinate system origin changes.
-        Argon.convertEntityReferenceFrame(geoBoxEntity, frame.time, ReferenceFrame.FIXED);
-    }
-    // if the geoBoxEntity still does not have a known pose,
-    // place it 2 meters in front of the user, on the stage
-    var geoBoxPose = app.getEntityPose(geoBoxEntity);
-    if ((geoBoxPose.status & Argon.PoseStatus.KNOWN) === 0) {
-        geoBoxEntity.position.setValue(new Cartesian3(0, 0, -2), app.user);
-        geoBoxEntity.orientation.setValue(Cesium.Quaternion.IDENTITY);
-        if (!Argon.convertEntityReferenceFrame(geoBoxEntity, frame.time, app.stage)) {
-            console.warn('Unable to convert to stage frame!');
-        }
-    }
-    // get the local coordinates of the local box, and set the THREE object
-    var boxPose = app.getEntityPose(geoBoxEntity);
-    if (geoBoxPose.poseStatus & Argon.PoseStatus.KNOWN) {
-        boxGeoObject.position.copy(geoBoxPose.position);
-        boxGeoObject.quaternion.copy(geoBoxPose.orientation);
-        // update one end of the line to be at the local box
-        lineGeometry.vertices[0].copy(geoBoxPose.position);
-    }
-    // get the local coordinates of the GT box, and set the THREE object
-    var geoPose = app.getEntityPose(gatechGeoEntity);
-    if (geoPose.poseStatus & Argon.PoseStatus.KNOWN) {
-        gatechGeoTarget.position.copy(geoPose.position);
-    }
-    else {
-        // initialize to a fixed location in case we can't convert to geospatial
-        gatechGeoTarget.position.y = 0;
-        gatechGeoTarget.position.z = -4000;
-        gatechGeoTarget.position.x = 1000;
-    }
-    // add the additional box only in 6DOF realities
-    if (app.userTracking === '6DOF') {
-        // get the local coordinates of the local box, and set the THREE object
-        var floorBoxPose = app.getEntityPose(app.context.floor);
-        floorBox.position.copy(floorBoxPose.position);
-        floorBox.quaternion.copy(floorBoxPose.orientation);
-        // update the other end of the line to be at the floor box
-        lineGeometry.vertices[1].copy(floorBoxPose.position);
-        lineGeometry.verticesNeedUpdate = true;
-        scene.add(floorBox);
-        scene.add(boxToboxLine);
-    }
-    else {
-        scene.remove(floorBox);
-        scene.remove(boxToboxLine);
-    }
-    // rotate the boxes at a constant speed, independent of frame rates
-    // to make it a little less boring
-    buzz.rotateY(2 * frame.deltaTime / 10000);
-    box.rotateY(3 * frame.deltaTime / 10000);
-    //
-    // stuff to print out the status message.  It's fairly expensive to convert FIXED
-    // coordinates back to LLA, but those coordinates probably make the most sense as
-    // something to show the user, so we'll do that computation.
-    //
-    // we'll compute the distance to the cube, just for fun. If the cube could be further away,
-    // we'd want to use Cesium.EllipsoidGeodesic, rather than Euclidean distance, but this is fine here.
-
+   
 
 
 	var userPos = new THREE.Vector3;
-	var buzzPos = new THREE.Vector3;
-	var boxPos = new THREE.Vector3;
-	var boxPos2 = new THREE.Vector3;
     user.getWorldPosition(userPos);
-    buzz.getWorldPosition(buzzPos);
-    box.getWorldPosition(boxPos);
-    floorBox.getWorldPosition(boxPos2);
-    var distanceToBox = userPos.distanceTo(boxPos);
-    var distanceToBuzz = userPos.distanceTo(buzzPos);
-    var distanceToBox2 = userPos.distanceTo(boxPos2);
-
 
     // cartographicDegrees is a 3 element array containing [longitude, latitude, height]
     var gpsCartographicDeg = [0, 0, 0];
@@ -363,53 +319,56 @@ app.updateEvent.on(function (frame) {
     var infoText = "Geospatial Argon example:<br>";
     // Why does user not move? check local movement & movement relative to fixed
     // get user position in global coordinates
-    if (userPoseFIXED.poseStatus & Argon.PoseStatus.KNOWN) {
-        var userLLA = Cesium.Ellipsoid.WGS84.cartesianToCartographic(userPoseFIXED.position);
-        if (userLLA) {
-            gpsCartographicDeg = [
-                CesiumMath.toDegrees(userLLA.longitude),
-                CesiumMath.toDegrees(userLLA.latitude),
-                userLLA.height
-            ];
-
-			frameIncrementer+=1;
-			if(frameIncrementer>100)
-			{
-				frameIncrementer = 0;
-				 getTimestamp(function(timestamp) {
-				  // Add the new timestamp to the record data.
-					playerStructure.timestamp = timestamp;
-					playerStructure.sender = senderUID;
-					playerStructure.lat= gpsCartographicDeg[1];
-					playerStructure.lng= gpsCartographicDeg[0];
-					playerStructure.altitude= gpsCartographicDeg[2];
-					playerStructure.heading= gunHeading;
-					var ref = firebase.database().ref().child('players').set(playerStructure, function(err) {
-					if (err) {  // Data was not written to firebase.
-					  console.warn(err);
-					}
-					else
-					{
-						console.warn("SENT");
-					}
-				  });
-				});
+    var userLLA = Cesium.Ellipsoid.WGS84.cartesianToCartographic(userPose.position);
+	
+	if (userLLA) {
+		gpsCartographicDeg = [
+			CesiumMath.toDegrees(userLLA.longitude),
+			CesiumMath.toDegrees(userLLA.latitude),
+			userLLA.height				
+		];
+	}
+	
+	//console.log(""+userLLA.longitude+" "+userLLA.latitude);
+	frameIncrementer+=1;
+	if(frameIncrementer>200)
+	{
+		frameIncrementer = 0;
+		 getTimestamp(function(timestamp) {
+		  // Add the new timestamp to the record data.
+			playerStructure.timestamp = timestamp;
+			playerStructure.sender = senderUID;
+			playerStructure.lat= gpsCartographicDeg[1];
+			playerStructure.lng= gpsCartographicDeg[0];
+			playerStructure.altitude= gpsCartographicDeg[2];
+			playerStructure.heading= gunHeading;
+			var ref = firebase.database().ref().child('players').set(playerStructure, function(err) {
+			if (err) {  // Data was not written to firebase.
+				console.warn(err);
 			}
-        }
-    }
-
-    var geoBoxFixedPose = app.getEntityPose(geoBoxEntity, ReferenceFrame.FIXED);
-    if (geoBoxFixedPose.poseStatus & Argon.PoseStatus.KNOWN) {
-        var boxLLA = Cesium.Ellipsoid.WGS84.cartesianToCartographic(geoBoxFixedPose.position);
-        if (boxLLA) {
-            boxCartographicDeg = [
-                CesiumMath.toDegrees(boxLLA.longitude),
-                CesiumMath.toDegrees(boxLLA.latitude),
-                boxLLA.height
-            ];
-        }
-    }
-
+			else
+			{
+				console.warn("SENT");
+			}
+		  });
+		});
+		
+		if(playerInstances!=null)
+		{
+			playerInstances.forEach(function(element) {
+				if(element.threejsObject!=null)
+				{
+					scene.remove(element.threejsObject);
+				}
+			});
+			playerInstances=null;
+		}
+		
+		playerInstances = new Array();
+		
+		
+		
+	}
 });
 // renderEvent is fired whenever argon wants the app to update its display
 app.renderEvent.on(function () {
