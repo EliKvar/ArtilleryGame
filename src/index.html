@@ -3,11 +3,8 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Arty</title>
-  <div>
-    <button  class="Button" type="button"  style = "background-color: #D4AF37; border: none; white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block;"  > Fire </button>
 
-  </div>
+<title> Artillery Game</title>
 
   <base href="/" />
   <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -26,14 +23,29 @@
 
   <ion-header>
     <ion-toolbar>
-      <ion-button onclick="javascript:RotateLeft();" style = "width:44%"  size = "small" id="left" shape = "round" color="tertiary">Rotate Left</ion-button>
-      <ion-button onclick="javascript:RotateRight();"  style = "width:44%"  size = "small" shape = "round" color="tertiary">Rotate Right</ion-button>
-      <ion-button onclick="javascript:Fire();"  expand="block" size = "small" shape = "round" color="danger">Fire</ion-button>
-      <ion-button onclick="javascript:AddElevation();"  style = "width:44%"  size = "small" shape = "round" color = "secondary" >+1 Elevation </ion-button>
-      <ion-button onclick="javascript:RemoveElevation();" style = "width:44%" size = "small" shape = "round" color="secondary">-1 Elevation </ion-button>
-      <ion-item style = "width:50%" color= "secondary">
-      <ion-input  id= "powerData" name="powerData" text-center type="number" placeholder="Enter Power (1-1000)" color = "danger" maxlength="4" ></ion-input>
+
+      <ion-item>
+    <ion-range pin = "true" id= "rotationData" min="0" max="360" step="1">
+      <ion-icon  slot="start" name="share-alt"></ion-icon>
+      <ion-icon size = "large" slot="end" name="share-alt"></ion-icon>
+    </ion-range>
     </ion-item>
+      <ion-item>
+    <ion-range pin = "true" id= "powerData" min="0" max="1000" step="1">
+      <ion-icon  slot="start" name="flame"></ion-icon>
+      <ion-icon size = "large" slot="end" name="flame"></ion-icon>
+    </ion-range>
+    </ion-item>
+
+  <ion-item>
+<ion-range pin = "true" id= "elevationData" min="0" max="90" step="1">
+  <ion-icon  slot="start" name="cog"></ion-icon>
+  <ion-icon size = "large" slot="end" name="cog"></ion-icon>
+</ion-range>
+</ion-item>
+<ion-button onclick="javascript:Fire();"  expand="block" size = "small" shape = "round" color="danger">Fire</ion-button>
+
+
 
 
 
@@ -54,11 +66,13 @@
     </ion-toolbar>
   </ion-header>
   <ion-content>
-
+    <canvas id="canvas2" width="500" height="500" style="border:1px solid #000000;">
+  </canvas>
   </ion-content>
 </head>
 
 <body>
+
   <div class="ion-padding">
 
   </div>

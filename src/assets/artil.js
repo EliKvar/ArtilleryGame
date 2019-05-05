@@ -11,6 +11,8 @@ var CesiumMath = Argon.Cesium.CesiumMath;
 var isTurningLeft = false;
 var isTurningRight = false;
 
+
+
 var start = false;
 var gunHeading = 0;
 var playerStructure = {
@@ -132,17 +134,12 @@ var mortarYaw;
 var mortarPitch;
 var mortarPower = 0;
 
-//Start of model code
+
+
+
 
 init();
 function init() {
-
-// document.getElementById("ROTATE_LEFT").addEventListener("click", RotateLeft);
-//  document.getElementById("ROTATE_RIGHT").addEventListener("click", RotateRight);
-  //document.getElementById("FIRE").addEventListener("click", Fire);
-  //document.getElementById("ADD_POW").addEventListener("click", AddPow);
-  //document.getElementById("REMOVE_POW").addEventListener("click", RemovePow);
-
 
   container = document.createElement( 'div' );
   document.body.appendChild( container );
@@ -162,7 +159,7 @@ function init() {
     object.scale.z = 1;
 
   //  object.position.x += 1; //Move left and right
-    object.position.z -= 1.9; //Move forward and back
+    object.position.z -= 2.4; //Move forward and back
     object.position.y -= .4; //Move up and down
 
     object.rotation.z -= 0; // Vertical rotation The numbers are weird for z rotation. Try .1 to .5 and -.1 to -.5
@@ -171,31 +168,10 @@ function init() {
     mortarYaw = object.rotation.y;
     mortarPitch = object.rotation.z;
 
+
     scene.add( object );
   }
-  //BUTTON FUNCTIONALITY
 
-
-/*
-  function videoCapture() {
-     var options = {
-        limit: 1,
-        duration: 10
-     };
-     navigator.device.capture.captureVideo(onSuccess, onError, options);
-
-     function onSuccess(mediaFiles) {
-        var i, path, len;
-        for (i = 0, len = mediaFiles.length; i < len; i += 1) {
-           path = mediaFiles[i].fullPath;
-           console.log(mediaFiles);
-        }
-     }
-
-     function onError(error) {
-        navigator.notification.alert('Error code: ' + error.code, null, 'Capture Error');
-     }
-  } */
   var manager = new THREE.LoadingManager( loadModel );
   manager.onProgress = function ( item, loaded, total ) {
     console.log( item, loaded, total );
@@ -213,54 +189,7 @@ function init() {
   var loader = new THREE.OBJLoader( manager );
   loader.load( 'assets/Old_mortar.obj', function ( obj ) {
     object = obj;  });}//, onProgress, onError );
-//}
-//End of model code
 
-//var loader = new THREE.TextureLoader();
-//var mortar = new THREE.Scene();
-//var mortar = new THREE.Scene();
-
-
-//var loadingManager = new THREE.LoadingManager( function () {
-
-//mortar.position.x = 0;
-//mortar.position.y = 20;
-//mortar.position.y = 0;
-//mortar.scale.x = 0.04;
-//mortar.scale.y = 0.04;
-//mortar.scale.z = 0.04;
-//mortar.translateZ( 10 );
-
-//scene.add( mortar );
-
-//} );
-
-
-//var loader = new THREE.ColladaLoader( loadingManager );
-  //        loader.load('assets/Old_mortarScaled.dae', function (collada) {
-//					mortar = collada.scene;
-       //  mortar.scale.set(1, 1, 1);
-//				} );
-
-        //mortar.scale.set(1, 1, 1);
-      //mortar.scale.x = 100;
-
-
-
-
-/*
-loader.load('./objects/Old_mortar.dae', function (collada) {
-    var geometry = new THREE.BoxGeometry(10, 10, 10);
-    var material = new THREE.MeshBasicMaterial({ map: texture });
-    var mesh = new THREE.Mesh(geometry, material);
-    mesh.scale.set(100, 100, 100);
-    buzz.add(mesh);
-});*/
-
-// have our geolocated object start somewhere, in this case
-// near Georgia Tech in Atlanta.
-// you should probably adjust this to a spot closer to you
-// (we found the lon/lat of Georgia Tech using Google Maps)
 var gatechGeoEntity = new Cesium.Entity({
     name: "Georgia Tech",
     position: Cartesian3.fromDegrees(-84.398881, 33.778463),
@@ -337,9 +266,13 @@ function getTimestamp(addClick) {
 // should be updated here.
 app.updateEvent.on(function (frame) {
     // get the user pose in the local coordinate frame()
+    if(!object) return;
+
     if(isTurningLeft == true){
       object.rotation.y += .01;
       var test = Math.floor( object.rotation.y * (180/Math.PI) % 360);
+
+      console.log(elevationData.value);
 
       console.log("Rotating left: "+ test);
     }
@@ -349,6 +282,10 @@ app.updateEvent.on(function (frame) {
 
       console.log("Rotating right: "+ test);
     }
+
+    gunHeading= rotationData.value * (Math.PI/180);
+
+    object.rotation.y = gunHeading;
 
     var userPose = app.getEntityPose(app.user);
     user.position.copy(userPose.position);
@@ -564,16 +501,4 @@ var userPower = document.getElementById("powerData").value;
 var userDirection = Math.floor( object.rotation.y * (180/Math.PI) % 360);
 
   console.log("userPower= "+ userPower+ " objectDirection "+ userDirection);
-}
-
-
-
-function AddElevation(){
-
-  console.log("Add Elevation");
-}
-
-function RemoveElevation(){
-
-  console.log("Remove Elevation");
 }
