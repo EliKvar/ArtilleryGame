@@ -8,6 +8,9 @@ var ReferenceFrame = Argon.Cesium.ReferenceFrame;
 var JulianDate = Argon.Cesium.JulianDate;
 var CesiumMath = Argon.Cesium.CesiumMath;
 
+var isTurningLeft = false;
+var isTurningRight = false;
+
 var start = false;
 var gunHeading = 0;
 var playerStructure = {
@@ -334,8 +337,17 @@ function getTimestamp(addClick) {
 // should be updated here.
 app.updateEvent.on(function (frame) {
     // get the user pose in the local coordinate frame()
-    if(start == true){
+    if(isTurningLeft == true){
       object.rotation.y += .01;
+      var test = Math.floor( object.rotation.y * (180/Math.PI) % 360);
+
+      console.log("Rotating left: "+ test);
+    }
+    if(isTurningRight == true){
+      object.rotation.y -= .01;
+      var test = Math.floor( object.rotation.y * (180/Math.PI) % 360);
+
+      console.log("Rotating right: "+ test);
     }
 
     var userPose = app.getEntityPose(app.user);
@@ -520,35 +532,41 @@ app.renderEvent.on(function () {
 });
 
 
-function StartRotation(){
+function RotateLeft(){
 
-  console.log("Rotate Left");
-start = true;
+  if(isTurningLeft == true){
+    isTurningLeft = false;
+    isTurningRight = false;
+
+  } else if(isTurningLeft == false){
+      isTurningLeft = true;
+      isTurningRight = false;
+
+    }
+
 }
 
-function StopRotation(){
-start = false;
-  console.log("Rotate Right");
+function RotateRight(){
+
+if(isTurningRight == true){
+  isTurningRight = false;
+  isTurningLeft = false;
+
+} else if(isTurningRight == false) {
+  isTurningRight = true;
+  isTurningLeft = false;
+}
 }
 
 function Fire(){
+var userPower = document.getElementById("powerData").value;
 
+var userDirection = Math.floor( object.rotation.y * (180/Math.PI) % 360);
 
-  console.log("Fire");
+  console.log("userPower= "+ userPower+ " objectDirection "+ userDirection);
 }
 
-function AddPow(){
 
-
-
-  console.log("Add Power");
-}
-
-function RemovePow(){
-
-
-  console.log("Remove Power");
-}
 
 function AddElevation(){
 

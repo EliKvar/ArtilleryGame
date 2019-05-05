@@ -26,13 +26,19 @@
 
   <ion-header>
     <ion-toolbar>
-      <ion-button onclick="javascript:StartRotation();" style = "width:44%"  size = "small" id="left" shape = "round" color="tertiary">Start Rotation</ion-button>
-      <ion-button onclick="javascript:StopRotation();"  style = "width:44%"  size = "small" shape = "round" color="tertiary">Stop Rotation</ion-button>
+      <ion-button onclick="javascript:RotateLeft();" style = "width:44%"  size = "small" id="left" shape = "round" color="tertiary">Rotate Left</ion-button>
+      <ion-button onclick="javascript:RotateRight();"  style = "width:44%"  size = "small" shape = "round" color="tertiary">Rotate Right</ion-button>
       <ion-button onclick="javascript:Fire();"  expand="block" size = "small" shape = "round" color="danger">Fire</ion-button>
-      <ion-button onclick="javascript:AddPow();"  style = "width:44%"  size = "small" shape = "round" color = "secondary" >+1 Pow </ion-button>
-      <ion-button onclick="javascript:RemovePow();" style = "width:44%" size = "small" shape = "round" color="secondary">-1 Pow </ion-button>
       <ion-button onclick="javascript:AddElevation();"  style = "width:44%"  size = "small" shape = "round" color = "secondary" >+1 Elevation </ion-button>
       <ion-button onclick="javascript:RemoveElevation();" style = "width:44%" size = "small" shape = "round" color="secondary">-1 Elevation </ion-button>
+      <ion-item style = "width:50%" color= "secondary">
+      <ion-input  id= "powerData" name="powerData" text-center type="number" placeholder="Enter Power (1-1000)" color = "danger" maxlength="4" ></ion-input>
+    </ion-item>
+
+
+
+
+
 
       <ion-title>
 
