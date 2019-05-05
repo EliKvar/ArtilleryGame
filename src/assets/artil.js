@@ -20,6 +20,8 @@ var globalUID = 1;
 var playerInstances = null;
 var globalLatOffset=0;
 var globalLonOffset=0;
+var lastFrame = null;
+
 var playerStructure = {
         sender: null,
         timestamp: null,
@@ -129,7 +131,7 @@ firebase.initializeApp(firebaseConfig);
 					playerIStruct.heading = parseFloat(playerstruct.heading);
 					//console.log("126 "+playerstruct.lat + " " + playerIStruct.lat + " " + globalLatOffset);
 					//console.log("127 "+playerstruct.lng + " " + playerIStruct.lng + " " + globalLonOffset);
-					console.log(playerstruct);
+					//console.log(playerstruct);
 					/*
 					var playerLocationEntity = new Argon.Cesium.Entity({
 						name: ""+globalUID++,
@@ -137,26 +139,50 @@ firebase.initializeApp(firebaseConfig);
 						orientation: new Argon.Cesium.ConstantProperty(undefined)
 					});
 					*/
+					
 					var playerLocationEntity = new Argon.Cesium.Entity({
 						name: ""+globalUID++,
-						position: Cartesian3.fromDegrees(playerIStruct.lat, playerIStruct.lng),
+						position: Cartesian3.fromDegrees(playerIStruct.lng, playerIStruct.lat, playerIStruct.altitude),
 						orientation: Cesium.Quaternion.IDENTITY
 					});
-					
+					/*
+					if(!lastFrame)
+						return;
+					var Pose = app.getEntityPose(playerLocationEntity);
+					console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					Argon.convertEntityReferenceFrame(playerLocationEntity, lastFrame.time, app.context.floor);
 					//if (!Argon.convertEntityReferenceFrame(playerLocationEntity, 1, app.stage)) {
 					//	console.warn('Unable to convert to stage frame! At ~128');
 					//}
-					//Argon.convertEntityReferenceFrame(playerLocationEntity, 0, ReferenceFrame.localOriginEastUpSouth);
+					Pose = app.getEntityPose(playerLocationEntity);
+					console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					Argon.convertEntityReferenceFrame(playerLocationEntity, lastFrame.time, ReferenceFrame.FIXED);
+					Pose = app.getEntityPose(playerLocationEntity);
+					console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					//console.log("Pos1 Log: "+userPose.position.x+" "+userPose.position.y+" "+userPose.position.z+" ");
+*/
 					var p = new THREE.Object3D;
+					
 					//p = object;
 					p.name = ""+globalUID++;
 					var Pose = app.getEntityPose(playerLocationEntity);
 					if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
 						p.position.copy(Pose.position);						
 					}
+					var boxPos = new THREE.Vector3(0,0,0); 
+					p.getWorldPosition(boxPos);
+					console.log("u : "+boxPos.x+" "+boxPos.y+" "+boxPos.z+" ");
 					
-					console.log("Pos1 Log: "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
 					
+					//var position = new Cesium.Cartographic(playerIStruct.lat * (Math.PI/180), playerIStruct.lng * (Math.PI/180), playerIStruct.altitude);
+					//var userLLA2 = Cesium.Ellipsoid.WGS84.cartographicToCartesian(position);
+					//console.log("u : "+userLLA2.x+" "+userLLA2.y+" "+userLLA2.z+" ");
+					
+					
+					//console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					console.log("p : "+p.position.x+" "+p.position.y+" "+p.position.z+" ");
+					
+					//console.log("Pos1 Log: "+camera.position.x+" "+camera.position.y+" "+camera.position.z+" ");
 					//p.position = playerLocationEntity.position;
 					
 					playerIStruct.threejsObject = p;
@@ -166,6 +192,9 @@ firebase.initializeApp(firebaseConfig);
 					p.entity = playerLocationEntity;
 					scene.add(p);
 					playerInstances.push(playerIStruct);
+					//var userPos = new THREE.Vector3;
+					//user.getWorldPosition(userPos);
+					var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
 					//console.log("Number of active player models:"+playerInstances.length);
 					drawLine(new THREE.Vector3(0,0,0),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
 				}, function (errorObject) {
@@ -306,6 +335,7 @@ function getTimestamp(addClick) {
 // rendered, before the renderEvent.  The state of your application
 // should be updated here.
 app.updateEvent.on(function (frame) {
+	lastFrame = frame;
     // get the user pose in the local coordinate frame()
     if(!object) return;
 
