@@ -18,7 +18,8 @@ var gunPower = 0;
 var senderUID = null;
 var globalUID = 1;
 var playerInstances = null;
-
+var globalLatOffset=0;
+var globalLonOffset=0;
 var playerStructure = {
         sender: null,
         timestamp: null,
@@ -44,7 +45,8 @@ var playerInstanceStructure = {
         lng: null,
 		altitude: null,
 		heading: null,
-		threejsObject: null
+		threejsObject: null,
+		entity: null
       };	  
 
 function drawLine(v1,v2)
@@ -59,8 +61,10 @@ function drawLine(v1,v2)
 	var lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
 	var line = new THREE.Line(lineGeometry, lineMaterial);
 	scene.add(line);
-	//console.log("Line generated "+v3.x+" "+v3.y+" "+v3.z+" "+v4.x+" "+v4.y+" "+v4.z);
+	console.log("Line generated "+v3.x+" "+v3.y+" "+v3.z+" "+v4.x+" "+v4.y+" "+v4.z);
 }
+
+//app.subscribeGeolocation({enableHighAccuracy: true});
 
 var firebaseConfig = {
   apiKey: "AIzaSyB0RWPQK3jmLxMRy7DiBBT29hoRjVNfnpw",
@@ -114,46 +118,55 @@ firebase.initializeApp(firebaseConfig);
         );
 		firebase.database().ref().child('players').on("value", function(snapshot) {					
 					var playerstruct = snapshot.val();
+					if(playerstruct.lng==0||playerstruct.lat==0)
+						return;
 					var playerIStruct = Object.assign({}, playerInstanceStructure);
+					//playerIStruct.lat = parseFloat(playerstruct.lat)-globalLatOffset;
+					//playerIStruct.lng = parseFloat(playerstruct.lng)-globalLonOffset;
 					playerIStruct.lat = parseFloat(playerstruct.lat);
 					playerIStruct.lng = parseFloat(playerstruct.lng);
 					playerIStruct.altitude = parseFloat(playerstruct.altitude);
 					playerIStruct.heading = parseFloat(playerstruct.heading);
-					//console.log(playerIStruct.lat);
-					//console.log(playerIStruct.lng);
-					//console.log(playerstruct);
+					//console.log("126 "+playerstruct.lat + " " + playerIStruct.lat + " " + globalLatOffset);
+					//console.log("127 "+playerstruct.lng + " " + playerIStruct.lng + " " + globalLonOffset);
+					console.log(playerstruct);
+					/*
 					var playerLocationEntity = new Argon.Cesium.Entity({
 						name: ""+globalUID++,
-						position: Cartesian3.fromDegrees(playerIStruct.lat, playerIStruct.lng,0),
+						position: new Argon.Cesium.ConstantPositionProperty(undefined),
+						orientation: new Argon.Cesium.ConstantProperty(undefined)
+					});
+					*/
+					var playerLocationEntity = new Argon.Cesium.Entity({
+						name: ""+globalUID++,
+						position: Cartesian3.fromDegrees(playerIStruct.lat, playerIStruct.lng),
 						orientation: Cesium.Quaternion.IDENTITY
 					});
-					if (!Argon.convertEntityReferenceFrame(playerLocationEntity, 1, app.stage)) {
-						console.warn('Unable to convert to stage frame! At ~128');
-					}
-
+					
+					//if (!Argon.convertEntityReferenceFrame(playerLocationEntity, 1, app.stage)) {
+					//	console.warn('Unable to convert to stage frame! At ~128');
+					//}
+					//Argon.convertEntityReferenceFrame(playerLocationEntity, 0, ReferenceFrame.localOriginEastUpSouth);
 					var p = new THREE.Object3D;
 					//p = object;
 					p.name = ""+globalUID++;
 					var Pose = app.getEntityPose(playerLocationEntity);
 					if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
-						//p.position=Pose.position;
-						//Pose.position.copy(user.position);
-						 user.position.copy(Pose.position);
-						 //p.position.copy(Pose.position);
-						 //Pose.position.copy(p.position);
-						 p.position.x = Pose.position.x;
-						 p.position.y = Pose.position.y;
-						 p.position.z = Pose.position.z;
+						p.position.copy(Pose.position);						
 					}
+					
+					console.log("Pos1 Log: "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					
 					//p.position = playerLocationEntity.position;
 					
 					playerIStruct.threejsObject = p;
 					if(playerInstances==null)
 						playerInstances = new Array();
 					p.position.z+=playerInstances.length;
+					p.entity = playerLocationEntity;
 					scene.add(p);
 					playerInstances.push(playerIStruct);
-					console.log("Number of active player models:"+playerInstances.length);
+					//console.log("Number of active player models:"+playerInstances.length);
 					drawLine(new THREE.Vector3(0,0,0),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
 				}, function (errorObject) {
 					console.log("The read failed: " + errorObject.code);
@@ -327,15 +340,15 @@ app.updateEvent.on(function (frame) {
 
 	var userPos = new THREE.Vector3;
     user.getWorldPosition(userPos);
-
+	//console.log(userPos);
     // cartographicDegrees is a 3 element array containing [longitude, latitude, height]
     var gpsCartographicDeg = [0, 0, 0];
     // create some feedback text
     var infoText = "Geospatial Argon example:<br>";
     // Why does user not move? check local movement & movement relative to fixed
     // get user position in global coordinates
-    var userLLA = Cesium.Ellipsoid.WGS84.cartesianToCartographic(userPose.position);
-	
+    var userLLA = Cesium.Ellipsoid.WGS84.cartesianToCartographic(userPoseFIXED.position);
+	//console.log("Pos1 Log: "+userPose.position.x+" "+userPose.position.y+" "+userPose.position.z+" ");
 	if (userLLA) {
 		gpsCartographicDeg = [
 			CesiumMath.toDegrees(userLLA.longitude),
@@ -344,6 +357,35 @@ app.updateEvent.on(function (frame) {
 		];
 	}
 	
+	/*
+	var geoPose = app.getEntityPose(gatechGeoEntity);
+    if (geoPose.poseStatus & Argon.PoseStatus.KNOWN) {
+        gatechGeoTarget.position.copy(geoPose.position);
+    }
+    else {
+        // initialize to a fixed location in case we can't convert to geospatial
+        gatechGeoTarget.position.y = 0;
+        gatechGeoTarget.position.z = -4000;
+        gatechGeoTarget.position.x = 1000;
+    }
+	*/
+	/*
+	if(playerInstances!=null)
+		{
+			playerInstances.forEach(function(element) 
+			{
+				if(element.entity!=null)
+				{
+					
+					var geoPose = app.getEntityPose(element.entity);
+					if (geoPose.poseStatus & Argon.PoseStatus.KNOWN) 
+					{
+						element.threejsObject.position.copy(geoPose.position);
+					}
+				}				
+			});		
+		}
+	*/
 	//console.log(""+userLLA.longitude+" "+userLLA.latitude);
 	frameIncrementer+=1;
 	if(frameIncrementer>200)
@@ -352,11 +394,13 @@ app.updateEvent.on(function (frame) {
 		 getTimestamp(function(timestamp) {
 		  // Add the new timestamp to the record data.
 			playerStructure.timestamp = timestamp;
-			playerStructure.sender = senderUID;
-			playerStructure.lat= gpsCartographicDeg[1];
-			playerStructure.lng= gpsCartographicDeg[0];
-			playerStructure.altitude= gpsCartographicDeg[2];
-			playerStructure.heading= gunHeading;
+			playerStructure.sender    = senderUID;
+			playerStructure.lat       = gpsCartographicDeg[1];
+			playerStructure.lng       = gpsCartographicDeg[0];
+			playerStructure.altitude  = gpsCartographicDeg[2];
+			playerStructure.heading   = gunHeading;
+			globalLatOffset           = playerStructure.lat;
+			globalLonOffset           = playerStructure.lng;
 			var ref = firebase.database().ref().child('players').set(playerStructure, function(err) {
 			if (err) {  // Data was not written to firebase.
 				console.warn(err);
