@@ -596,7 +596,7 @@ app.updateEvent.on(function (frame) {
 			startPos.y=object.y+10;
 			drawLineLB(startPos,endPos);
 		}
-		console.log("Bullet Position: "+e.x+" "+e.y+" "+e.z);
+		//console.log("Bullet Position: "+e.x+" "+e.y+" "+e.z);
 		}
 	});
 });
