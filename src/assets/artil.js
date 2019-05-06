@@ -162,16 +162,17 @@ firebase.initializeApp(firebaseConfig);
 					//console.log("Pos1 Log: "+userPose.position.x+" "+userPose.position.y+" "+userPose.position.z+" ");
 */
 					var p = new THREE.Object3D;
-					
-					//p = object;
+					if(!object)
+						return;
+					p = object.clone(true);
 					p.name = ""+globalUID++;
 					var Pose = app.getEntityPose(playerLocationEntity);
 					if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
 						p.position.copy(Pose.position);						
 					}
-					var boxPos = new THREE.Vector3(0,0,0); 
-					p.getWorldPosition(boxPos);
-					console.log("u : "+boxPos.x+" "+boxPos.y+" "+boxPos.z+" ");
+					//var boxPos = new THREE.Vector3(0,0,0); 
+					//p.getWorldPosition(boxPos);
+					//console.log("u : "+boxPos.x+" "+boxPos.y+" "+boxPos.z+" ");
 					
 					
 					//var position = new Cesium.Cartographic(playerIStruct.lat * (Math.PI/180), playerIStruct.lng * (Math.PI/180), playerIStruct.altitude);
@@ -180,7 +181,7 @@ firebase.initializeApp(firebaseConfig);
 					
 					
 					//console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
-					console.log("p : "+p.position.x+" "+p.position.y+" "+p.position.z+" ");
+					//console.log("p : "+p.position.x+" "+p.position.y+" "+p.position.z+" ");
 					
 					//console.log("Pos1 Log: "+camera.position.x+" "+camera.position.y+" "+camera.position.z+" ");
 					//p.position = playerLocationEntity.position;
@@ -188,15 +189,18 @@ firebase.initializeApp(firebaseConfig);
 					playerIStruct.threejsObject = p;
 					if(playerInstances==null)
 						playerInstances = new Array();
-					p.position.z+=playerInstances.length;
+					//p.position.y+=playerInstances.length;
 					p.entity = playerLocationEntity;
 					scene.add(p);
 					playerInstances.push(playerIStruct);
 					//var userPos = new THREE.Vector3;
 					//user.getWorldPosition(userPos);
-					var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
+					//var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
 					//console.log("Number of active player models:"+playerInstances.length);
-					drawLine(new THREE.Vector3(0,0,0),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(-1,-1,-1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(1 ,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
 				}, function (errorObject) {
 					console.log("The read failed: " + errorObject.code);
 			});
