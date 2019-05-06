@@ -24,6 +24,8 @@ var globalUID = 1;
 var playerInstances = null;
 var globalLatOffset=0;
 var globalLonOffset=0;
+var lastFrame = null;
+
 var playerStructure = {
         sender: null,
         timestamp: null,
@@ -134,7 +136,7 @@ firebase.initializeApp(firebaseConfig);
 					playerIStruct.heading = parseFloat(playerstruct.heading);
 					//console.log("126 "+playerstruct.lat + " " + playerIStruct.lat + " " + globalLatOffset);
 					//console.log("127 "+playerstruct.lng + " " + playerIStruct.lng + " " + globalLonOffset);
-					console.log(playerstruct);
+					//console.log(playerstruct);
 					/*
 					var playerLocationEntity = new Argon.Cesium.Entity({
 						name: ""+globalUID++,
@@ -142,18 +144,32 @@ firebase.initializeApp(firebaseConfig);
 						orientation: new Argon.Cesium.ConstantProperty(undefined)
 					});
 					*/
+
 					var playerLocationEntity = new Argon.Cesium.Entity({
 						name: ""+globalUID++,
-						position: Cartesian3.fromDegrees(playerIStruct.lat, playerIStruct.lng),
+						position: Cartesian3.fromDegrees(playerIStruct.lng, playerIStruct.lat, playerIStruct.altitude),
 						orientation: Cesium.Quaternion.IDENTITY
 					});
-
+					/*
+					if(!lastFrame)
+						return;
+					var Pose = app.getEntityPose(playerLocationEntity);
+					console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					Argon.convertEntityReferenceFrame(playerLocationEntity, lastFrame.time, app.context.floor);
 					//if (!Argon.convertEntityReferenceFrame(playerLocationEntity, 1, app.stage)) {
 					//	console.warn('Unable to convert to stage frame! At ~128');
 					//}
-					//Argon.convertEntityReferenceFrame(playerLocationEntity, 0, ReferenceFrame.localOriginEastUpSouth);
+					Pose = app.getEntityPose(playerLocationEntity);
+					console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					Argon.convertEntityReferenceFrame(playerLocationEntity, lastFrame.time, ReferenceFrame.FIXED);
+					Pose = app.getEntityPose(playerLocationEntity);
+					console.log("Pose : "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					//console.log("Pos1 Log: "+userPose.position.x+" "+userPose.position.y+" "+userPose.position.z+" ");
+*/
 					var p = new THREE.Object3D;
-					//p = object;
+					if(!object)
+						return;
+					p = object.clone(true);
 					p.name = ""+globalUID++;
 					var Pose = app.getEntityPose(playerLocationEntity);
 					if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
@@ -167,12 +183,18 @@ firebase.initializeApp(firebaseConfig);
 					playerIStruct.threejsObject = p;
 					if(playerInstances==null)
 						playerInstances = new Array();
-					p.position.z+=playerInstances.length;
+					//p.position.y+=playerInstances.length;
 					p.entity = playerLocationEntity;
 					scene.add(p);
 					playerInstances.push(playerIStruct);
+					//var userPos = new THREE.Vector3;
+					//user.getWorldPosition(userPos);
+					//var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
 					//console.log("Number of active player models:"+playerInstances.length);
-					drawLine(new THREE.Vector3(0,0,0),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(-1,-1,-1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(1 ,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
 				}, function (errorObject) {
 					console.log("The read failed: " + errorObject.code);
 			});
@@ -317,6 +339,7 @@ function getTimestamp(addClick) {
 // rendered, before the renderEvent.  The state of your application
 // should be updated here.
 app.updateEvent.on(function (frame) {
+	lastFrame = frame;
     // get the user pose in the local coordinate frame()
     if(!object) return;
     if(!line) return;
