@@ -11,7 +11,7 @@ var CesiumMath = Argon.Cesium.CesiumMath;
 var isTurningLeft = false;
 var isTurningRight = false;
 
-
+var screenToRed = false;
 
 var line;
 
@@ -444,7 +444,10 @@ app.renderEvent.on(function () {
     }
 
 });
+function displayData(){
+document.Write(playerstruct.lng, playerstruct.lat);
 
+}
 
 function Fire(){
 gunPower = document.getElementById("powerData").value;
@@ -454,4 +457,9 @@ gunHeading = Math.floor( object.rotation.y * (180/Math.PI) % 360);
 gunElevation = document.getElementById("elevationData").value;
 
   console.log("Gun Power: "+ gunPower+ " Gun Heading(rotation): "+ gunHeading+ " Gun Elevation: "+gunElevation);
+}
+
+function ScreenRed(){
+
+
 }
