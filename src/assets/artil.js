@@ -11,7 +11,7 @@ var CesiumMath = Argon.Cesium.CesiumMath;
 var isTurningLeft = false;
 var isTurningRight = false;
 
-var screenToRed = false;
+var isDead = false;
 
 var line;
 
@@ -434,6 +434,17 @@ app.updateEvent.on(function (frame) {
     arrowLine1.rotation.z = gunElevation;
     arrowLine2.rotation.z = gunElevation;
 
+    if(isDead == true){
+
+      renderer.setClearColor( 0xFF0000, 1);
+      var tb = document.getElementById("iontoolbar");
+
+      tb.color = "danger";
+      rotationData.color = "danger";
+      powerData.color = "danger";
+      elevationData.color = "danger";
+    }
+
 
     var userPose = app.getEntityPose(app.user);
     user.position.copy(userPose.position);
@@ -551,10 +562,7 @@ app.renderEvent.on(function () {
     }
 
 });
-function displayData(){
-document.Write(playerstruct.lng, playerstruct.lat);
 
-}
 
 function Fire(){
 gunPower = document.getElementById("powerData").value;
@@ -599,5 +607,6 @@ gunElevation = document.getElementById("elevationData").value;
 
 function ScreenRed(){
 
+//isDead = true;
 
 }
