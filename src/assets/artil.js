@@ -12,23 +12,23 @@ var isTurningLeft = false;
 var isTurningRight = false;
 
 var isDead = false;
-
+var deadcount = 255;
 var line;
 
 var start = false;
-var gunHeading = 0;
-var gunElevation = 0;
-var gunPower = 0;
+var gunHeading = 0.0;
+var gunElevation = 0.0;
+var gunPower = 0.0;
 var senderUID = null;
 var globalUID = 1;
 var playerInstances = null;
 var bulletInstances = null;
-var globalLatOffset=0;
-var globalLonOffset=0;
+var globalLatOffset=0.0;
+var globalLonOffset=0.0;
 var lastFrame = null;
-var ourLat=0;
-var ourLon=0;
-var ourAlt=0;
+var ourLat=0.0;
+var ourLon=0.0;
+var ourAlt=0.0;
 var playerStructure = {
         sender: null,
         timestamp: null,
@@ -47,12 +47,12 @@ var bulletStructure = {
 		heading: null,
 		elevation: null,
 		power: null,
-        x: null,
-        y: null,
-		z: null,
-		vx: null,
-		vy: null,
-		vz: null
+        x: 0.0,
+        y: 0.0,
+		z: 0.0,
+		vx: 0.0,
+		vy: 0.0,
+		vz: 0.0
       };
 
 var playerInstanceStructure = {
@@ -73,13 +73,28 @@ function drawLine(v1,v2)
 	var lineGeometry = new THREE.Geometry();
 	lineGeometry.vertices.push(v3);
 	lineGeometry.vertices.push(v4);
-	var lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
+	var lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000FF });
 	var line = new THREE.Line(lineGeometry, lineMaterial);
 	scene.add(line);
   return line;
 	//console.log("Line generated "+v3.x+" "+v3.y+" "+v3.z+" "+v4.x+" "+v4.y+" "+v4.z);
 }
 
+function drawLineLB(v1,v2)
+{
+	if(!(v1!=null&&v2!=null))
+		return;
+	var v3 = new THREE.Vector3(v1.x,v1.y,v1.z);
+	var v4 = new THREE.Vector3(v2.x,v2.y,v2.z);
+	var lineGeometry = new THREE.Geometry();
+	lineGeometry.vertices.push(v3);
+	lineGeometry.vertices.push(v4);
+	var lineMaterial = new THREE.LineBasicMaterial({ color: 0xAAAAFF });
+	var line = new THREE.Line(lineGeometry, lineMaterial);
+	scene.add(line);
+  return line;
+	//console.log("Line generated "+v3.x+" "+v3.y+" "+v3.z+" "+v4.x+" "+v4.y+" "+v4.z);
+}
 //app.subscribeGeolocation({enableHighAccuracy: true});
 
 var firebaseConfig = {
@@ -184,8 +199,8 @@ firebase.initializeApp(firebaseConfig);
 					if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
 						p.position.copy(Pose.position);
 					}
-
-					console.log("Pos1 Log: "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
+					p.position.y-=10;
+					//console.log("Pos1 Log: "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
 
 					//p.position = playerLocationEntity.position;
 
@@ -200,10 +215,10 @@ firebase.initializeApp(firebaseConfig);
 					//user.getWorldPosition(userPos);
 					//var userPoseFIXED = app.getEntityPose(app.user, ReferenceFrame.FIXED);
 					//console.log("Number of active player models:"+playerInstances.length);
-					drawLine(new THREE.Vector3(-1,-1,-1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
-					drawLine(new THREE.Vector3(1 ,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
-					drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
-					drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					//drawLine(new THREE.Vector3(-1,-1,-1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					//drawLine(new THREE.Vector3(1 ,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					//drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
+					//drawLine(new THREE.Vector3(-1,-1, 1),new THREE.Vector3(p.position.x,p.position.y,p.position.z));
 				}, function (errorObject) {
 					console.log("The read failed: " + errorObject.code);
 			});
@@ -213,54 +228,63 @@ firebase.initializeApp(firebaseConfig);
 			if(newBullet==null)
 				return;
 			var bulStruct = Object.assign({}, bulletStructure);
+			//console.log(newBullet);
 			bulStruct.sender = newBullet.sender;
 			bulStruct.timestamp = newBullet.timestamp;
+			bulStruct.x = parseFloat(newBullet.x);
+			bulStruct.y = parseFloat(newBullet.y);
+			bulStruct.z = parseFloat(newBullet.z);
+			bulStruct.vx = parseFloat(newBullet.vx);
+			bulStruct.vy = parseFloat(newBullet.vy);
+			bulStruct.vz = parseFloat(newBullet.vz);
 			bulStruct.lat = parseFloat(newBullet.lat);
 			bulStruct.lon = parseFloat(newBullet.lon);
 			bulStruct.alt = parseFloat(newBullet.alt);
 			bulStruct.heading = parseFloat(newBullet.heading);
 			bulStruct.elevation = parseFloat(newBullet.elevation);
 			bulStruct.power = parseFloat(newBullet.power);
-			console.log(bulStruct);
+//console.log(typeof(bulStruct.x));
+//console.log(typeof(newBullet.x));
+			//console.log(bulStruct);
+			
 			var Entity = new Argon.Cesium.Entity({
 			name: ""+globalUID++,
 			position: Cartesian3.fromDegrees(bulStruct.lon, bulStruct.lat, bulStruct.alt),
 			orientation: Cesium.Quaternion.IDENTITY
 			});
-			var p = new THREE.Object3D;
-			if(!object)
-				return;
-			p = object.clone(true);
+			var p = new THREE.Object3D();
 			p.name = ""+globalUID++;
 			var Pose = app.getEntityPose(Entity);
 			if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
 				p.position.copy(Pose.position);
+				//console.log(p.position);
+				//console.log(Pose.position);
 			}
+			bulStruct.x = Pose.position.x;
+			bulStruct.y = Pose.position.y;
+			bulStruct.z = Pose.position.z;
+			//console.log(bulStruct);
 			
-			bulStruct.x = p.position.x;
-			bulStruct.y = p.position.y;
-			bulStruct.z = p.position.z;
-			
-			var vector = new THREE.Vector3( 1, 0, 0 );			
-			var zaxis = new THREE.Vector3( 0, 0, 1 );
+			var vector = new THREE.Vector3( 1.0, 0, 0 );			
+			var zaxis = new THREE.Vector3( 0, 0, 1.0 );
 			var vangle = 0.0174533 * bulStruct.elevation;
+			console.log(vector);
 			vector.applyAxisAngle( zaxis, vangle );
-			var yaxis = new THREE.Vector3( 0, 0, 1 );
+			var yaxis = new THREE.Vector3( 0, 1.0, 0);
 			var hangle = 0.0174533 * bulStruct.heading;
 			vector.applyAxisAngle( zaxis, hangle );
-			
-			vector.multiply(bulStruct.power);
-			
-			bulStruct.vx = vector.x;
-			bulStruct.vy = vector.y;
-			bulStruct.vz = vector.z;
+			//console.log(vector);
+			//vector.multiply(bulStruct.power+1.0);//BREAKS EVERYTHING
+			bulStruct.vy = vector.y*bulStruct.power;
+			bulStruct.vz = vector.z*bulStruct.power;
+			bulStruct.vx = vector.x*bulStruct.power;
 			
 			if(bulletInstances==null)
 				bulletInstances = new Array();
 			bulletInstances.push(bulStruct);
-			
-			console.log("Bullets Alive: "+bulletInstances.length);
-			console.log(bulStruct);
+			//console.log(bulStruct);
+			//console.log("Bullets Alive: "+bulletInstances.length);
+			//console.log(bulStruct);
   /*
 var bulletStructure = {
         sender: null,
@@ -354,7 +378,7 @@ function init() {
 
   //  object.position.x += 1; //Move left and right
     object.position.z -= 2.4; //Move forward and back
-    object.position.y -= .8; //Move up and down
+    object.position.y -= 9999.8; //Move up and down
 
     object.rotation.z -= 0; // Vertical rotation The numbers are weird for z rotation. Try .1 to .5 and -.1 to -.5
   //  object.rotation.y += 90; // Lateral rotation
@@ -515,10 +539,66 @@ app.updateEvent.on(function (frame) {
 		}
 
 		playerInstances = new Array();
-
+		
+		
 
 
 	}
+	if(playerInstances==null||bulletInstances==null)
+		return;
+	var dV = new THREE.Vector3(0,0,0);
+	var startPos = new THREE.Vector3(0,0,0);
+	var endPos = new THREE.Vector3(0,0,0);
+	var dist = 0;
+	bulletInstances.forEach(function(e) {
+		if(!(e.y<0&&e.vy<0))
+		{
+		
+		playerInstances.forEach(function(playr) {
+		if(playr.threejsObject!=null)
+			//console.log("Bullet Position: "+playr.threejsObject.position.x+" "+e.x+" "+dV.x);
+		
+			if(playr.sender!=e.sender)
+			{
+				dV.x = playr.threejsObject.position.x-e.x;
+				dV.y = playr.threejsObject.position.y-e.y;
+				dV.z = playr.threejsObject.position.z-e.z;
+				dist = dV.length();
+				//console.log(dist);
+				if(dist<10.0&&dV.y<0)
+				{
+					ScreenRed();
+				}
+			}
+			
+		});
+		
+		
+		
+		startPos.x = e.x;
+		startPos.y = e.y;
+		startPos.z = e.z;
+		
+		
+		e.x+=e.vx*0.01;
+		e.y+=e.vy*0.01;
+		e.z+=e.vz*0.01;
+		e.vy-=0.1;
+		e.vx*=0.99;
+		e.vy*=0.99;
+		e.vz*=0.99;
+		endPos.x = e.x;
+		endPos.y = e.y;
+		endPos.z = e.z;
+		drawLine(startPos,endPos);
+		if(frameIncrementer>199)
+		{
+			startPos.y=object.y+10;
+			drawLineLB(startPos,endPos);
+		}
+		console.log("Bullet Position: "+e.x+" "+e.y+" "+e.z);
+		}
+	});
 });
 // renderEvent is fired whenever argon wants the app to update its display
 app.renderEvent.on(function () {
@@ -581,18 +661,18 @@ gunElevation = document.getElementById("elevationData").value;
 		  // Add the new timestamp to the record data.
 			bulletStruct.timestamp = timestamp;
 			bulletStruct.sender = senderUID;
-			bulletStructure.lat = ourLat;
-			bulletStructure.lon = ourLon;
-			bulletStructure.alt = ourAlt;
+			bulletStruct.lat = ourLat;
+			bulletStruct.lon = ourLon;
+			bulletStruct.alt = ourAlt;
 			bulletStruct.heading = gunHeading;
 			bulletStruct.power = gunPower;
 			bulletStruct.elevation = gunElevation;
-			bulletStruct.x=0;
-			bulletStruct.y=0;
-			bulletStruct.z=0;
-			bulletStruct.vx=0;
-			bulletStruct.vy=0;
-			bulletStruct.vz=0;
+			bulletStruct.x=0.0;
+			bulletStruct.y=0.0;
+			bulletStruct.z=0.0;
+			bulletStruct.vx=0.0;
+			bulletStruct.vy=0.0;
+			bulletStruct.vz=0.0;
 			var ref = firebase.database().ref().child('bullet').set(bulletStruct, function(err) {
 			if (err) {  // Data was not written to firebase.
 				console.warn(err);
@@ -607,6 +687,6 @@ gunElevation = document.getElementById("elevationData").value;
 
 function ScreenRed(){
 
-//isDead = true;
+	isDead = true;
 
 }
