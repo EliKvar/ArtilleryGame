@@ -22,10 +22,13 @@ var gunPower = 0;
 var senderUID = null;
 var globalUID = 1;
 var playerInstances = null;
+var bulletInstances = null;
 var globalLatOffset=0;
 var globalLonOffset=0;
 var lastFrame = null;
-
+var ourLat=0;
+var ourLon=0;
+var ourAlt=0;
 var playerStructure = {
         sender: null,
         timestamp: null,
@@ -38,12 +41,18 @@ var playerStructure = {
 var bulletStructure = {
         sender: null,
         timestamp: null,
-        lat: null,
-        lng: null,
+		lat: null,
+		lon: null,
 		alt: null,
 		heading: null,
-		angle: null,
-		velocity: null
+		elevation: null,
+		power: null,
+        x: null,
+        y: null,
+		z: null,
+		vx: null,
+		vy: null,
+		vz: null
       };
 
 var playerInstanceStructure = {
@@ -198,6 +207,79 @@ firebase.initializeApp(firebaseConfig);
 				}, function (errorObject) {
 					console.log("The read failed: " + errorObject.code);
 			});
+			
+		firebase.database().ref().child('bullet').on("value", function(snapshot) {
+			var newBullet = snapshot.val();
+			if(newBullet==null)
+				return;
+			var bulStruct = Object.assign({}, bulletStructure);
+			bulStruct.sender = newBullet.sender;
+			bulStruct.timestamp = newBullet.timestamp;
+			bulStruct.lat = parseFloat(newBullet.lat);
+			bulStruct.lon = parseFloat(newBullet.lon);
+			bulStruct.alt = parseFloat(newBullet.alt);
+			bulStruct.heading = parseFloat(newBullet.heading);
+			bulStruct.elevation = parseFloat(newBullet.elevation);
+			bulStruct.power = parseFloat(newBullet.power);
+			console.log(bulStruct);
+			var Entity = new Argon.Cesium.Entity({
+			name: ""+globalUID++,
+			position: Cartesian3.fromDegrees(bulStruct.lon, bulStruct.lat, bulStruct.alt),
+			orientation: Cesium.Quaternion.IDENTITY
+			});
+			var p = new THREE.Object3D;
+			if(!object)
+				return;
+			p = object.clone(true);
+			p.name = ""+globalUID++;
+			var Pose = app.getEntityPose(Entity);
+			if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
+				p.position.copy(Pose.position);
+			}
+			
+			bulStruct.x = p.position.x;
+			bulStruct.y = p.position.y;
+			bulStruct.z = p.position.z;
+			
+			var vector = new THREE.Vector3( 1, 0, 0 );			
+			var zaxis = new THREE.Vector3( 0, 0, 1 );
+			var vangle = 0.0174533 * bulStruct.elevation;
+			vector.applyAxisAngle( zaxis, vangle );
+			var yaxis = new THREE.Vector3( 0, 0, 1 );
+			var hangle = 0.0174533 * bulStruct.heading;
+			vector.applyAxisAngle( zaxis, hangle );
+			
+			vector.multiply(bulStruct.power);
+			
+			bulStruct.vx = vector.x;
+			bulStruct.vy = vector.y;
+			bulStruct.vz = vector.z;
+			
+			if(bulletInstances==null)
+				bulletInstances = new Array();
+			bulletInstances.push(bulStruct);
+			
+			console.log("Bullets Alive: "+bulletInstances.length);
+			console.log(bulStruct);
+  /*
+var bulletStructure = {
+        sender: null,
+        timestamp: null,
+		lat: null,
+		lon: null,
+		alt: null,
+		heading: null,
+		elevation: null,
+		power: null,
+        x: null,
+        y: null,
+		z: null,
+		vx: null,
+		vy: null,
+		vz: null
+      };
+	  */
+		});
 	  }
 
 initAuthentication(initFirebase.bind(undefined));
@@ -252,8 +334,7 @@ var mortarPower = 0;
 init();
 function init() {
 
-
-
+	document.getElementById("powerData").value=100;
   container = document.createElement( 'div' );
   document.body.appendChild( container );
   camera = new THREE.PerspectiveCamera();
@@ -382,7 +463,9 @@ app.updateEvent.on(function (frame) {
 			userLLA.height
 		];
 	}
-
+	ourLat=gpsCartographicDeg[1];
+	ourLon=gpsCartographicDeg[0];
+	ourAlt=gpsCartographicDeg[2];
 	//console.log(""+userLLA.longitude+" "+userLLA.latitude);
 	frameIncrementer+=1;
 	if(frameIncrementer>200)
@@ -464,6 +547,7 @@ app.renderEvent.on(function () {
         // adjust the hud
         hud.setViewport(x, y, width, height, subview.index);
         hud.render(subview.index);
+		
     }
 
 });
@@ -480,6 +564,37 @@ gunHeading = Math.floor( object.rotation.y * (180/Math.PI) % 360);
 gunElevation = document.getElementById("elevationData").value;
 
   console.log("Gun Power: "+ gunPower+ " Gun Heading(rotation): "+ gunHeading+ " Gun Elevation: "+gunElevation);
+  
+	var bulletStruct = Object.assign({}, bulletStructure);
+	
+  if(ourLat==null||ourLat==NaN)
+	  return;
+  getTimestamp(function(timestamp) {
+		  // Add the new timestamp to the record data.
+			bulletStruct.timestamp = timestamp;
+			bulletStruct.sender = senderUID;
+			bulletStructure.lat = ourLat;
+			bulletStructure.lon = ourLon;
+			bulletStructure.alt = ourAlt;
+			bulletStruct.heading = gunHeading;
+			bulletStruct.power = gunPower;
+			bulletStruct.elevation = gunElevation;
+			bulletStruct.x=0;
+			bulletStruct.y=0;
+			bulletStruct.z=0;
+			bulletStruct.vx=0;
+			bulletStruct.vy=0;
+			bulletStruct.vz=0;
+			var ref = firebase.database().ref().child('bullet').set(bulletStruct, function(err) {
+			if (err) {  // Data was not written to firebase.
+				console.warn(err);
+			}
+			else
+			{
+				console.warn("SENT");
+			}
+		  });
+		});
 }
 
 function ScreenRed(){
