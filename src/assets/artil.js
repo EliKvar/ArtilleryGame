@@ -199,7 +199,7 @@ firebase.initializeApp(firebaseConfig);
 					if (Pose.poseStatus & Argon.PoseStatus.KNOWN) {
 						p.position.copy(Pose.position);
 					}
-					p.position.y-=10;
+					p.position.y-=4;
 					//console.log("Pos1 Log: "+Pose.position.x+" "+Pose.position.y+" "+Pose.position.z+" ");
 
 					//p.position = playerLocationEntity.position;
@@ -263,22 +263,28 @@ firebase.initializeApp(firebaseConfig);
 			bulStruct.x = Pose.position.x;
 			bulStruct.y = Pose.position.y;
 			bulStruct.z = Pose.position.z;
-			//console.log(bulStruct);
+			console.log(bulStruct);
 			
-			var vector = new THREE.Vector3( 1.0, 0, 0 );			
-			var zaxis = new THREE.Vector3( 0, 0, 1.0 );
+			var vector = new THREE.Vector3( 1.0, 0, 0.0 );			
+			//var zaxis = new THREE.Vector3( 0, 0, 1.0 );
+			var yaxis = new THREE.Vector3( 0, 1.0, 0);
 			var vangle = 0.0174533 * bulStruct.elevation;
 			console.log(vector);
-			vector.applyAxisAngle( zaxis, vangle );
-			var yaxis = new THREE.Vector3( 0, 1.0, 0);
-			var hangle = 0.0174533 * bulStruct.heading;
-			vector.applyAxisAngle( zaxis, hangle );
-			//console.log(vector);
+			//vector.applyAxisAngle( zaxis, vangle );
+
+			var hangle = bulStruct.heading;
+			
+			vector.applyAxisAngle( yaxis, hangle );
+			vector.y=parseFloat(newBullet.elevation)*parseFloat(newBullet.power);
+			
+			
 			//vector.multiply(bulStruct.power+1.0);//BREAKS EVERYTHING
-			bulStruct.vy = vector.y*bulStruct.power;
+			bulStruct.vy = parseFloat(newBullet.elevation)*parseFloat(newBullet.power);
 			bulStruct.vz = vector.z*bulStruct.power;
 			bulStruct.vx = vector.x*bulStruct.power;
-			
+			console.log(vector);
+			if(bulStruct.vy<10)
+				bulStruct.vy =100.0;
 			if(bulletInstances==null)
 				bulletInstances = new Array();
 			bulletInstances.push(bulStruct);
@@ -565,7 +571,7 @@ app.updateEvent.on(function (frame) {
 				dV.z = playr.threejsObject.position.z-e.z;
 				dist = dV.length();
 				//console.log(dist);
-				if(dist<10.0&&dV.y<0)
+				if(dist<10.0&&e.vy<0)
 				{
 					ScreenRed();
 				}
@@ -591,7 +597,7 @@ app.updateEvent.on(function (frame) {
 		endPos.y = e.y;
 		endPos.z = e.z;
 		drawLine(startPos,endPos);
-		if(frameIncrementer>199)
+		if(frameIncrementer%20>18)
 		{
 			startPos.y=object.y+10;
 			drawLineLB(startPos,endPos);
